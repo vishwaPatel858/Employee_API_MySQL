@@ -103,7 +103,7 @@ export const valiadteResetPassword = (schema: Joi.Schema) => {
   };
 };
 
-export const verifyToken = (schema: Joi.Schema) => {
+export const validateToken = (schema: Joi.Schema) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { access_token } = req.body;

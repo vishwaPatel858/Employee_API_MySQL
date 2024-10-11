@@ -18,7 +18,7 @@ import {
   ValidateForgetPassword,
   validateOTPVerification,
   valiadteResetPassword,
-  verifyToken,
+  validateToken,
 } from "../middleware/employee.middleware.ts";
 import {
   employeeSchema,
@@ -48,4 +48,4 @@ router.post(
   resetPassword
 );
 
-router.post("/profile", verifyToken(tokenSchema), getEmployee);
+router.post("/profile", validateToken(tokenSchema), getEmployee);

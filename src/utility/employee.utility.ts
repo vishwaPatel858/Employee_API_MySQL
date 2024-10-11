@@ -2,7 +2,7 @@ import { pool } from "../utility/mysql_database.ts";
 import { redisClient } from "../utility/redis.utility.ts";
 import bcrypt from "bcrypt";
 import * as jwt from "jsonwebtoken";
-import { JwtPayload ,VerifyErrors} from "jsonwebtoken";
+import { JwtPayload, VerifyErrors } from "jsonwebtoken";
 export const queryAsync = <T>(query: string): Promise<T[]> => {
   return new Promise((resolve, reject) => {
     pool.query(query, (err, result) => {
@@ -58,3 +58,21 @@ export const generateRefreshToken = async (id: string) => {
   return refreshToken;
 };
 
+export const verifyToken = async (token: string, secretKey: string) => {
+  try {
+    const decode = await jwt.verify(
+      token,
+      secretKey,
+      (err: VerifyErrors | null, decoded: JwtPayload | string | undefined) => {
+        if (err) {
+          throw err;
+        } else {
+          return decoded;
+        }
+      }
+    );
+    return decode;
+  } catch (err) {
+    throw err;
+  }
+};
