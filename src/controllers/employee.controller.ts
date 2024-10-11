@@ -89,8 +89,8 @@ export const deleteEmployee = (req: Request, res: Response) => {
 
 export const login = (req: Request, res: Response) => {
   try {
-    const { emp_id, password } = req.body;
-    employeeLogin(emp_id, password)
+    const { email, password } = req.body;
+    employeeLogin(email, password)
       .then((response) => {
         res.status(200).json(response);
       })

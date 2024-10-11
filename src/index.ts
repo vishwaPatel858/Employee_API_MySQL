@@ -1,6 +1,8 @@
 import express from "express";
 import dotenv from "dotenv";
 import { router } from "./routes/employee.routes.ts";
+import {redisClient} from "./utility/redis.utility.ts"
+redisClient.connect();
 const app = express();
 app.use(express.json());
 dotenv.config();

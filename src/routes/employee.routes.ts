@@ -10,20 +10,42 @@ import {
   logout,
   forgetPassword,
   verifyOTP,
-  resetPassword
+  resetPassword,
 } from "../controllers/employee.controller.ts";
-import { validateEmployee } from "../middleware/employee.middleware.ts";
+import {
+  validateEmployee,
+  validateLogin,
+  ValidateForgetPassword,
+  validateOTPVerification,
+  valiadteResetPassword,
+  verifyToken,
+} from "../middleware/employee.middleware.ts";
 import {
   employeeSchema,
   employeeUpdateSchema,
+  LoginSchema,
+  EmailSchema,
+  verifyOTPSchema,
+  resetPasswordSchema,
+  tokenSchema,
 } from "../validations/employee.validations.ts";
 router.get("/", getEmployees);
 router.get("/:id", getEmployee);
 router.post("/", validateEmployee(employeeSchema), addEmployee);
 router.post("/update", validateEmployee(employeeUpdateSchema), updateEmployee);
 router.delete("/:id", deleteEmployee);
-router.post("/login", login);
+router.post("/login", validateLogin(LoginSchema), login);
 router.post("/logout", logout);
-router.post("/forgetpassword", forgetPassword);
-router.post("/verifyotp", verifyOTP);
-router.post("/resetpassword", resetPassword);
+router.post(
+  "/forgetpassword",
+  ValidateForgetPassword(EmailSchema),
+  forgetPassword
+);
+router.post("/verifyotp", validateOTPVerification(verifyOTPSchema), verifyOTP);
+router.post(
+  "/resetpassword",
+  valiadteResetPassword(resetPasswordSchema),
+  resetPassword
+);
+
+router.post("/profile", verifyToken(tokenSchema), getEmployee);

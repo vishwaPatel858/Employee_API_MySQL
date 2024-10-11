@@ -20,7 +20,7 @@ const transporterOptions = {
 
 export const sendMail = async (mailOptions: MailOptions) => {
   try {
-    const transporter = nodeMailer.createTraporter(transporterOptions);
+    const transporter = nodeMailer.createTransport(transporterOptions);
     const options = {
       from: transporterOptions.auth.user,
       to: mailOptions.to,

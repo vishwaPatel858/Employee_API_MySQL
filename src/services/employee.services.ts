@@ -1,8 +1,14 @@
-import { EmployeeType, Password } from "../types/employee.types.ts";
+import {
+  EmployeeType,
+  Password,
+  MySQLRes,
+  EmpMySQLRes,
+} from "../types/employee.types.ts";
 const jwt = require("jsonwebtoken");
 import { VerifyErrors, JwtPayload } from "jsonwebtoken";
 import {
   queryAsync,
+  sqlQueryAsync,
   generateEncryptedPassword,
   validatePassword,
   generateAccessToken,
@@ -17,7 +23,7 @@ export const getAllEmployees = async () => {
     let response: EmployeeType[] = await queryAsync<EmployeeType>(query);
     if (response.length == 0) {
       return {
-        message: "Employee not found!",
+        message: "Employees not found!",
         status: 404,
       };
     }
@@ -52,7 +58,7 @@ export const craeteEmployee = async (employee: EmployeeType) => {
     const isDuplicateEmail = await queryAsync(query);
     if (isDuplicateEmail.length > 0) {
       return {
-        message: "Duplicate Email",
+        message: "Email already exists.",
         status: 409,
       };
     }
@@ -93,7 +99,6 @@ export const modifyEmployee = async (employee: EmployeeType) => {
         SET first_name = '${employee.first_name}' , last_name='${employee.last_name}' , email = '${employee.email}' , password = '${employee.password}' 
         WHERE emp_id = ${employee.emp_id}`;
     const updatedEmployee = await queryAsync(query);
-    console.log(updatedEmployee);
     return {
       message: "Employee Updated Successfully",
       status: 404,
@@ -106,27 +111,36 @@ export const modifyEmployee = async (employee: EmployeeType) => {
 export const employeeDelete = async (id: string) => {
   try {
     let query = `DELETE FROM employee WHERE emp_id = ${id}`;
-    const deleteEmp = await queryAsync(query);
-    return {
-      message: "Employee Deleted Successfully.",
-      status: 200,
-    };
+    const deleteEmp: MySQLRes = await sqlQueryAsync<MySQLRes>(query);
+    if (deleteEmp.affectedRows == 0) {
+      return {
+        message: "Employee Not Found!.",
+        status: 404,
+      };
+    } else {
+      return {
+        message: "Employee Deleted Successfully.",
+        status: 200,
+      };
+    }
   } catch (err) {
     throw err;
   }
 };
 
-export const employeeLogin = async (emp_id: number, password: string) => {
+export const employeeLogin = async (email: string, password: string) => {
   try {
-    let query = `SELECT password FROM employee WHERE emp_id = ${emp_id}`;
-    const empExits: Password[] = await queryAsync<Password>(query);
+    let query = `SELECT emp_id,password FROM employee WHERE email = '${email}'`;
+    const empExits: EmpMySQLRes[] = await queryAsync<EmpMySQLRes>(query);
+    console.log(empExits);
     if (empExits.length == 0) {
       return {
-        message: "Employee Doesn't Exits",
+        message: "Employee Not Found.",
         status: 404,
       };
     }
-    const encryptedPass = empExits[0].password;
+    const emp_id = empExits[0].emp_id || 0;
+    const encryptedPass = empExits[0].password || "";
     const isValidPass = await validatePassword(password, encryptedPass);
     if (!isValidPass) {
       return {
@@ -149,6 +163,13 @@ export const employeeLogin = async (emp_id: number, password: string) => {
 
 export const employeeLogout = async (access_token: string) => {
   try {
+    const redisId = await redisClient.get(access_token);
+    if (redisId == null) {
+      return {
+        message: "Unauthorized Access.",
+        status: 401,
+      };
+    }
     const secretKey = process.env.JWT_Access_SECRET || "";
     const emp_id = await jwt.verify(
       access_token,
@@ -169,7 +190,8 @@ export const employeeLogout = async (access_token: string) => {
         status: 404,
       };
     }
-    redisClient.del(access_token);
+    await redisClient.del(access_token);
+    await redisClient.del(emp_id);
     return {
       message: "Logout Successfully!.",
       status: 200,
@@ -225,7 +247,7 @@ export const employeeVerifyOTP = async (otp: string, email: string) => {
   try {
     const actualOTP = await redisClient.get(email);
     if (otp == actualOTP) {
-      redisClient.del(email);
+      await redisClient.del(email);
       return {
         message: "OTP Verified Sucessfully.",
         status: 200,
@@ -245,7 +267,7 @@ export const employeeResetPassword = async (
   email: string
 ) => {
   try {
-    let query = `SELECT password FROM employee WHERE email = '${email}`;
+    let query = `SELECT password FROM employee WHERE email = '${email}'`;
     const isEmpExists: Password[] = await queryAsync<Password>(query);
     if (isEmpExists.length == 0) {
       return {
@@ -253,11 +275,10 @@ export const employeeResetPassword = async (
         status: 404,
       };
     }
-    const encryptedPassword = await generateEncryptedPassword(
-      isEmpExists[0].password
-    );
+    const encryptedPassword = await generateEncryptedPassword(password);
     query = `UPDATE employee SET password = '${password}' WHERE email = '${email}'`;
-    const resUpdated = await queryAsync(query);
+    const resUpdated: MySQLRes = await sqlQueryAsync<MySQLRes>(query);
+    console.log(resUpdated);
     return {
       message: "Password reset successfully.",
       status: 200,
