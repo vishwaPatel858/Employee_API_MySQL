@@ -78,7 +78,6 @@ export const modifyEmployee = async (employee: EmployeeType) => {
   try {
     let query = `SELECT emp_id FROM employee WHERE emp_id = ${employee.emp_id}`;
     const userExists = await queryAsync(query);
-    console.log(userExists);
     if (userExists.length == 0) {
       return {
         message: "Employee Not Found!",
@@ -132,7 +131,6 @@ export const employeeLogin = async (email: string, password: string) => {
   try {
     let query = `SELECT emp_id,password FROM employee WHERE email = '${email}'`;
     const empExits: EmpMySQLRes[] = await queryAsync<EmpMySQLRes>(query);
-    console.log(empExits);
     if (empExits.length == 0) {
       return {
         message: "Employee Not Found.",
@@ -276,9 +274,8 @@ export const employeeResetPassword = async (
       };
     }
     const encryptedPassword = await generateEncryptedPassword(password);
-    query = `UPDATE employee SET password = '${password}' WHERE email = '${email}'`;
+    query = `UPDATE employee SET password = '${encryptedPassword}' WHERE email = '${email}'`;
     const resUpdated: MySQLRes = await sqlQueryAsync<MySQLRes>(query);
-    console.log(resUpdated);
     return {
       message: "Password reset successfully.",
       status: 200,
